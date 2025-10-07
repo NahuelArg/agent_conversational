@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Análisis de Reputación - MMI Analytics</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .chat-container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            height: 90vh;
+            max-height: 700px;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #00af87 0%, #00675b 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .chat-header h1 {
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .chat-header p {
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+
+        .message {
+            display: flex;
+            margin-bottom: 15px;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.bot {
+            justify-content: flex-start;
+        }
+
+        .message.user {
+            justify-content: flex-end;
+        }
+
+        .message-bubble {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 18px;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+
+        .message.bot .message-bubble {
+            background: #e8f7f3;
+            color: #00675b;
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.user .message-bubble {
+            background: #00af87;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .test-cases {
+            padding: 12px 20px;
+            background: #f0f4ff;
+            border-top: 2px solid #667eea;
+            max-height: 250px;
+            overflow-y: auto;
+        }
+
+        .test-cases h3 {
+            font-size: 0.85rem;
+            color: #667eea;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+        }
+
+        .test-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 8px;
+        }
+
+        .test-card {
+            background: white;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .test-card:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+        }
+
+        .test-card h4 {
+            font-size: 0.8rem;
+            color: #667eea;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .test-card p {
+            font-size: 0.7rem;
+            color: #666;
+            line-height: 1.3;
+        }
+
+        .test-card .test-steps {
+            font-size: 0.65rem;
+            color: #999;
+            margin-top: 4px;
+        }
+
+        .opciones-rapidas {
+            padding: 10px 20px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .opcion-btn {
+            background: #e8f7f3;
+            color: #00675b;
+            border: 2px solid #b2dfdb;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s;
+            border: none;
+        }
+
+        .opcion-btn:hover {
+            background: #00af87;
+            color: white;
+            transform: translateY(-1px);
+        }
+
+        .chat-input {
+            padding: 20px;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #ddd;
+            border-radius: 25px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .chat-input input:focus {
+            border-color: #00af87;
+        }
+
+        .chat-input button {
+            background: #00af87;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+
+        .chat-input button:hover {
+            background: #00897b;
+            transform: translateY(-2px);
+        }
+
+        .chat-input button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 12px 16px;
+            background: #e8f7f3;
+            border-radius: 18px;
+            width: fit-content;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #00af87;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .session-info {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.2);
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            opacity: 0.7;
+        }
+
+        .reset-btn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 0.7rem;
+            cursor: pointer;
+            opacity: 0.7;
+            transition: opacity 0.2s;
+        }
+
+        .reset-btn:hover {
+            opacity: 1;
+        }
+
+        .toggle-tests {
+            background: transparent;
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.75rem;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: all 0.2s;
+        }
+
+        .toggle-tests:hover {
+            background: rgba(255,255,255,0.1);
+            border-color: rgba(255,255,255,0.5);
+        }
+
+        .test-running {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 8px 12px;
+            margin: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            color: #856404;
+            display: none;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-running.active {
+            display: flex;
+        }
+
+        .spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid #ffc107;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="chat-container">
+        <div class="chat-header">
+            <button class="reset-btn" onclick="resetearSesion()" title="Reiniciar conversación">🔄 Reset</button>
+            <div class="session-info" id="sessionInfo"></div>
+            <h1>📊 Análisis de Reputación</h1>
+            <p>MMI Analytics - TripAdvisor</p>
+            <button class="toggle-tests" onclick="toggleTests()">🧪 Casos de Prueba</button>
+        </div>
+
+        <!-- Indicador de test en ejecución -->
+        <div class="test-running" id="testRunning">
+            <div class="spinner"></div>
+            <span id="testRunningText">Ejecutando caso de prueba...</span>
+        </div>
+
+        <div class="chat-messages" id="chatMessages">
+            <div class="message bot">
+                <div class="message-bubble">
+                    ¡Hola! Soy tu asistente de análisis de reputación. Puedo ayudarte a entender qué dicen los turistas sobre hoteles y destinos canarios en TripAdvisor.
+                    
+                    ¿Qué te gustaría analizar?
+                </div>
+            </div>
+        </div>
+
+        <!-- Casos de Prueba -->
+        <div class="test-cases" id="testCases" style="display: none;">
+            <h3>🧪 Casos de Prueba Obligatorios</h3>
+            <div class="test-grid">
+                <div class="test-card" onclick="ejecutarTest('caso1')">
+                    <h4>🍽️ Caso 1: Hotel - Comida</h4>
+                    <p>Hotel Botánico, último mes, comida</p>
+                    <div class="test-steps">4 pasos automáticos</div>
+                </div>
+
+                <div class="test-card" onclick="ejecutarTest('caso2')">
+                    <h4>🏖️ Caso 2: Destino - General</h4>
+                    <p>Costa Adeje, temporada alta</p>
+                    <div class="test-steps">1 paso (entrada directa)</div>
+                </div>
+
+                <div class="test-card" onclick="ejecutarTest('caso3')">
+                    <h4>⚔️ Caso 3: Comparación</h4>
+                    <p>Comparar vs competidores</p>
+                    <div class="test-steps">Flujo conversacional</div>
+                </div>
+
+                <div class="test-card" onclick="ejecutarTest('caso4')">
+                    <h4>❓ Caso 4: Consulta Ambigua</h4>
+                    <p>No sé qué analizar</p>
+                    <div class="test-steps">Guía del sistema</div>
+                </div>
+
+                <div class="test-card" onclick="ejecutarTest('caso5')">
+                    <h4>⚠️ Caso 5: Datos Insuficientes</h4>
+                    <p>Hotel inexistente</p>
+                    <div class="test-steps">Manejo de errores</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="opciones-rapidas" id="opcionesRapidas">
+            <button class="opcion-btn" onclick="enviarOpcion('Mi hotel específico')">🏨 Mi hotel</button>
+            <button class="opcion-btn" onclick="enviarOpcion('Destino turístico')">🏖️ Destino</button>
+            <button class="opcion-btn" onclick="enviarOpcion('Comparar con competidores')">⚔️ Comparar</button>
+        </div>
+
+        <div class="chat-input">
+            <input 
+                type="text" 
+                id="userInput" 
+                placeholder="Escribe tu mensaje..." 
+                onkeypress="if(event.key==='Enter') enviarMensaje()"
+            >
+            <button onclick="enviarMensaje()" id="sendBtn">Enviar</button>
+        </div>
+    </div>
+
+    <script>
+        const WEBHOOK_URL = 'https://nahuelarg.app.n8n.cloud/webhook/generate-comments';
+        let sessionId = null;
+        let testEnEjecucion = false;
+
+        // ============================================
+        // CASOS DE PRUEBA OBLIGATORIOS
+        // ============================================
+        const casosTest = {
+            caso1: {
+                nombre: 'Caso 1: Hotel Específico - Comida',
+                descripcion: 'Hotel Botánico, último mes, aspecto comida',
+                mensajes: [
+                    { texto: 'Quiero analizar mi hotel', delay: 1500 },
+                    { texto: 'Hotel Botánico', delay: 2000 },
+                    { texto: 'último mes', delay: 2000 },
+                    { texto: 'comida', delay: 2000 }
+                ]
+            },
+            caso2: {
+                nombre: 'Caso 2: Destino Turístico - General',
+                descripcion: 'Costa Adeje en temporada alta',
+                mensajes: [
+                    { texto: 'Costa Adeje en temporada alta', delay: 1500 }
+                ]
+            },
+            caso3: {
+                nombre: 'Caso 3: Comparación con Competencia',
+                descripcion: 'Análisis comparativo',
+                mensajes: [
+                    { texto: 'Comparar vs competidores', delay: 1500 }
+                ]
+            },
+            caso4: {
+                nombre: 'Caso 4: Consulta Ambigua',
+                descripcion: 'Usuario sin dirección clara',
+                mensajes: [
+                    { texto: 'No sé qué analizar', delay: 1500 }
+                ]
+            },
+            caso5: {
+                nombre: 'Caso 5: Datos Insuficientes',
+                descripcion: 'Hotel inexistente o sin datos',
+                mensajes: [
+                    { texto: 'hotel', delay: 1500 },
+                    { texto: 'Hotel Fantasma Inexistente', delay: 2000 },
+                    { texto: 'último mes', delay: 2000 },
+                    { texto: 'general', delay: 2000 }
+                ]
+            }
+        };
+
+        function toggleTests() {
+            const testPanel = document.getElementById('testCases');
+            testPanel.style.display = testPanel.style.display === 'none' ? 'block' : 'none';
+        }
+
+        async function ejecutarTest(casoId) {
+            if (testEnEjecucion) {
+                alert('Ya hay un test en ejecución. Espera a que termine.');
+                return;
+            }
+
+            const caso = casosTest[casoId];
+            if (!caso) {
+                console.error('Caso no encontrado:', casoId);
+                return;
+            }
+
+            // Confirmar ejecución
+            const confirmar = confirm(
+                `🧪 ${caso.nombre}\n\n` +
+                `${caso.descripcion}\n\n` +
+                `Se enviarán ${caso.mensajes.length} mensaje(s) automáticamente.\n\n` +
+                `¿Continuar?`
+            );
+
+            if (!confirmar) return;
+
+            testEnEjecucion = true;
+            mostrarTestRunning(caso.nombre);
+            console.log(`🧪 INICIANDO: ${caso.nombre}`);
+
+            // Limpiar sesión
+            sessionStorage.removeItem('chat_session_id');
+            inicializarSesion();
+
+            // Limpiar chat visual (mantener mensaje inicial)
+            const chatMessages = document.getElementById('chatMessages');
+            chatMessages.innerHTML = `
+                <div class="message bot">
+                    <div class="message-bubble">
+                        ¡Hola! Soy tu asistente de análisis de reputación. Puedo ayudarte a entender qué dicen los turistas sobre hoteles y destinos canarios en TripAdvisor.
+                        
+                        ¿Qué te gustaría analizar?
+                    </div>
+                </div>
+            `;
+
+            // Ejecutar secuencia de mensajes
+            for (let i = 0; i < caso.mensajes.length; i++) {
+                const msg = caso.mensajes[i];
+                
+                await new Promise(resolve => setTimeout(resolve, msg.delay));
+                
+                console.log(`  📤 Paso ${i + 1}/${caso.mensajes.length}: "${msg.texto}"`);
+                document.getElementById('userInput').value = msg.texto;
+                await enviarMensaje();
+            }
+
+            testEnEjecucion = false;
+            ocultarTestRunning();
+            console.log(`✅ TEST COMPLETADO: ${caso.nombre}\n`);
+            
+            // Mostrar resultado
+            setTimeout(() => {
+                alert(`✅ Test completado: ${caso.nombre}\n\nRevisa el chat para ver el resultado.`);
+            }, 1000);
+        }
+
+        function mostrarTestRunning(nombre) {
+            const indicator = document.getElementById('testRunning');
+            const text = document.getElementById('testRunningText');
+            text.textContent = `Ejecutando: ${nombre}`;
+            indicator.classList.add('active');
+        }
+
+        function ocultarTestRunning() {
+            const indicator = document.getElementById('testRunning');
+            indicator.classList.remove('active');
+        }
+
+        // ============================================
+        // GESTIÓN DE SESSION
+        // ============================================
+        function inicializarSesion() {
+            sessionId = sessionStorage.getItem('chat_session_id');
+            
+            if (!sessionId) {
+                sessionId = 'session_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+                sessionStorage.setItem('chat_session_id', sessionId);
+                console.log('✅ Nueva sesión:', sessionId);
+            } else {
+                console.log('♻️ Sesión recuperada:', sessionId);
+            }
+            
+            document.getElementById('sessionInfo').textContent = `ID: ${sessionId.substr(0, 15)}...`;
+        }
+
+        function resetearSesion() {
+            if (testEnEjecucion) {
+                alert('Hay un test en ejecución. Espera a que termine.');
+                return;
+            }
+
+            if (confirm('¿Reiniciar conversación?\n\nEsto borrará el historial actual.')) {
+                sessionStorage.removeItem('chat_session_id');
+                location.reload();
+            }
+        }
+
+        // ============================================
+        // MENSAJERÍA
+        // ============================================
+        function agregarMensaje(texto, esUsuario = false) {
+            const chatMessages = document.getElementById('chatMessages');
+            const mensaje = document.createElement('div');
+            mensaje.className = `message ${esUsuario ? 'user' : 'bot'}`;
+            mensaje.innerHTML = `<div class="message-bubble">${texto}</div>`;
+            chatMessages.appendChild(mensaje);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function mostrarTyping() {
+            const chatMessages = document.getElementById('chatMessages');
+            const typing = document.createElement('div');
+            typing.className = 'message bot';
+            typing.id = 'typing-indicator';
+            typing.innerHTML = `
+                <div class="typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            `;
+            chatMessages.appendChild(typing);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function ocultarTyping() {
+            const typing = document.getElementById('typing-indicator');
+            if (typing) typing.remove();
+        }
+
+        function deshabilitarInput(deshabilitar) {
+            document.getElementById('userInput').disabled = deshabilitar;
+            document.getElementById('sendBtn').disabled = deshabilitar;
+        }
+
+        // ============================================
+        // BACKEND
+        // ============================================
+        async function enviarAlBackend(mensaje) {
+            try {
+                console.log('📤 Enviando:', { session_id: sessionId, mensaje });
+                
+                const response = await fetch(WEBHOOK_URL, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        session_id: sessionId,
+                        mensaje: mensaje
+                    })
+                });
+
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                
+                const data = await response.json();
+                console.log('📥 Respuesta:', data);
+                return data;
+
+            } catch (error) {
+                console.error('❌ Error:', error);
+                return {
+                    mensaje: 'Error al conectar con el servidor. Intenta de nuevo.',
+                    error: true
+                };
+            }
+        }
+
+        async function enviarMensaje() {
+            const input = document.getElementById('userInput');
+            const texto = input.value.trim();
+            
+            if (!texto) return;
+
+            agregarMensaje(texto, true);
+            input.value = '';
+            
+            deshabilitarInput(true);
+            mostrarTyping();
+
+            const respuesta = await enviarAlBackend(texto);
+            
+            ocultarTyping();
+            deshabilitarInput(false);
+
+            if (respuesta.mensaje) {
+                agregarMensaje(respuesta.mensaje);
+            } else if (respuesta.output) {
+                agregarMensaje(respuesta.output);
+            } else {
+                agregarMensaje('Respuesta recibida sin formato esperado.');
+            }
+
+            input.focus();
+        }
+
+        function enviarOpcion(opcion) {
+            if (testEnEjecucion) {
+                alert('Hay un test en ejecución. Espera a que termine.');
+                return;
+            }
+            document.getElementById('userInput').value = opcion;
+            enviarMensaje();
+        }
+
+        // ============================================
+        // INIT
+        // ============================================
+        window.onload = function() {
+            inicializarSesion();
+            console.log('🚀 Sistema listo');
+            console.log('💡 Comandos disponibles:');
+            console.log('  - ejecutarTest("caso1") a ejecutarTest("caso5")');
+            console.log('  - resetearSesion()');
+            console.log('  - toggleTests()');
+        };
+    </script>
+</body>
+</html>
